@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   keys.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: myevou <myevou@student.42.fr>              +#+  +:+       +#+        */
+/*   By: ellehmim <ellehmim@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/27 10:43:05 by myevou            #+#    #+#             */
-/*   Updated: 2024/10/01 17:23:58 by myevou           ###   ########.fr       */
+/*   Updated: 2024/10/01 19:51:43 by ellehmim         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,17 +51,13 @@ int exit_cub(t_cub *cub)
 	if (cub->texture[3].img_ptr)
 		mlx_destroy_image(cub->mlx, cub->texture[3].img_ptr);
 	free_map(&cub->map);
-	// if(cub->map.grid)
-	// {
-	// 	int i = -1;
-	// 	while (++i < cub->map.height)
-	// 		free(cub->map.grid[i]);
-	// 	free(cub->map.grid);
-	// }
 	mlx_destroy_image(cub->mlx, cub->img_ptr);
 	mlx_destroy_window(cub->mlx, cub->win);
 	mlx_destroy_display(cub->mlx);
-	// free(cub->ma)
+	free(cub->map.no);
+	free(cub->map.so);
+	free(cub->map.we);
+	free(cub->map.ea);
 	free(cub->mlx);
 	exit(0);
 }

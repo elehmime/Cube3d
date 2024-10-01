@@ -3,61 +3,178 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: ellehmim <ellehmim@student.42.fr>          +#+  +:+       +#+         #
+#    By: myevou <myevou@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2024/09/25 13:40:52 by ellehmim          #+#    #+#              #
-#    Updated: 2024/09/29 15:35:43 by ellehmim         ###   ########.fr        #
+#    Created: 2024/09/26 11:49:51 by myevou            #+#    #+#              #
+#    Updated: 2024/09/30 20:12:41 by myevou           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
-CC = cc
-# Options de compilation
-CFLAGS = -Wall -Wextra -Werror -g3
-# Dossier contenant la libft et son chemin d'inclusion
-LIBFT_DIR = ./libft
-LIBFT_INC = -I$(LIBFT_DIR)
-LIBFT_LIB = -L$(LIBFT_DIR) -lft
 
-MIMILIBX_DIR = ./mlx
-MIMILIBX_INC = -I$(MIMILIBX_DIR)
-MIMILIBX_LIB = -L$(MIMILIBX_DIR) -lmlx -lX11 -lXext -L/usr/lib/X11
+# **************************************************************************** #
+#                                   PROGRAM                                    #
+# **************************************************************************** #
 
-# Sources et objets pour le serveur et le client
-SRC = parsing.c error_handling.c map_creat.c map_split.c map_check.c map_check_utils.c map_playable.c map_playable_utils.c
-OBJ = $(SRC:.c=.o)
+NAME			= cub3d
 
-# Noms des exécutables
-CUBE3D_BIN = cube3d
+# **************************************************************************** #
+#                                   COMPILER                                   #
+# **************************************************************************** #
+CC			  = cc
+RM			  = rm -rf
+CFLAGS		  += -Wall -Wextra -Werror
+CFLAGS		  += -g3 -MMD -MP
 
-# Règle par défaut pour compiler le serveur et le client
-all: $(CUBE3D_BIN)
+# **************************************************************************** #
+#                                    PATHS                                     #
+# **************************************************************************** #
 
-# Compilation de la libft
-$(LIBFT_DIR)/libft.a:
-	$(MAKE) -C $(LIBFT_DIR)
+INC_PATH		= includes
+OBJ_PATH		= .obj
 
-$(MIMILIBX_DIR)/libmlx_Linux.a:
-	$(MAKE) -C $(MIMILIBX_DIR)
+# **************************************************************************** #
+#                                    FLAGS                                     #
+# **************************************************************************** #
 
-# Règle générique pour convertir les .c en .o
-%.o: %.c
-	$(CC) $(CFLAGS) $(LIBFT_INC) $(MIMILIBX_INC) -c $< -o $@
+CFLAGS		  += -I$(INC_PATH)
 
-# Compilation du serveur
-$(CUBE3D_BIN): $(OBJ) $(LIBFT_DIR)/libft.a $(MIMILIBX_DIR)/libmlx_Linux.a
-	$(CC) $(OBJ) $(LIBFT_LIB) $(MIMILIBX_LIB) -o $@
+# **************************************************************************** #
+#                                   SOURCES                                    #
+# **************************************************************************** #
 
-# Nettoyage des fichiers compilés
+# SYSTEM
+SRCS			= $(addsuffix .c, \
+				main )
+
+# SRCS / MOVES
+SRCS			+= $(addprefix srcs/moves/, $(addsuffix .c, \
+				moves\
+				keys ))
+
+# SRCS / MAP
+SRCS			+= $(addprefix srcs/map/, $(addsuffix .c, \
+				map ))
+
+# SRCS / RAYCASTING
+SRCS			+= $(addprefix srcs/raycasting/, $(addsuffix .c, \
+				draw \
+				init \
+				raycasting \
+				utils ))
+
+# SRCS / PARISING
+SRCS			+= $(addprefix srcs/parsing/, $(addsuffix .c, \
+				error_handling \
+				map_check_utils \
+				map_check \
+				map_creat \
+				map_playable \
+				map_playable_utils \
+				map_split \
+				parsing \
+				utils ))
+
+OBJS			= $(SRCS:%.c=$(OBJ_PATH)/%.o)
+
+DEPS			= $(OBJS:.o=.d)
+
+# **************************************************************************** #
+#                                     LIBS                                     #
+# **************************************************************************** #
+
+LDLIBS			=	-lft -lmlx_Linux -lXext -lX11 -lm -lz
+
+# OS
+OS				=	$(shell uname)
+
+ifeq ($(OS), Darwin)
+INCL_RDL_LIB    =   -L/usr/local/opt/readline/lib -lncurses
+INCL_RDL_HEADER =   -I/usr/local/opt/readline/include
+else
+INCL_RDL_LIB    =   -L/Users/$(USER)/.linuxbrew/opt/readline/lib -lncurses
+INCL_RDL_HEADER =   -I/Users/$(USER)/.linuxbrew/opt/readline/include
+endif
+
+# LIBFT
+LIBFT_DIR		= libft
+LIBFT_INC_PATH	= $(LIBFT_DIR)/includes
+LIBFT			= $(LIBFT_DIR)/libft.a
+
+# MINILIBX
+MLX_DIR			= minilibx-linux
+MLX_INC_PATH	= $(MLX_DIR)
+MLX				= $(MLX_DIR)/libmlx_Linux.a
+
+CFLAGS			+= -I$(LIBFT_INC_PATH) -I$(MLX_INC_PATH)
+
+LDLIBS			+= -L$(LIBFT_DIR) -L$(MLX_DIR)
+
+# **************************************************************************** #
+#                                    RULES                                     #
+# **************************************************************************** #
+
+all:			$(NAME)
+
+$(NAME):		${OBJ_PATH} $(OBJS) $(LIBFT) $(MLX)
+				@cd minilibx-linux && $(MAKE)
+				@$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LDLIBS) $(LIBFT)
+				@echo "\n${GREEN}> $(NAME) was successfully compiled 🎉${END}"
+
+$(LIBFT):
+				@make -C $(LIBFT_DIR)
+
+$(MLX):
+				@make -C $(MLX_DIR)
+
+$(OBJ_PATH):
+				@mkdir -p ${OBJ_PATH}
+
+$(OBJ_PATH)/%.o: %.c
+				@mkdir -p $(dir $@)
+				@printf "${BLUE}> Generating minishell objects... %-33.33s\r" $@
+				@$(CC) $(CFLAGS) $(INCL_RDL_HEADER) -c $< -o $@
+
 clean:
-	rm -f $(OBJ)
-	$(MAKE) -C $(LIBFT_DIR) clean
+				@make clean -C $(LIBFT_DIR)
+				@$(RM) $(OBJ_PATH)
+				@echo "${YELLOW}> All objects files of $(NAME) have been deleted ❌${RESET}${END}"
 
-# Suppression de tout ce qui a été compilé
-fclean: clean
-	rm -f $(CUBE3D_BIN)
-	$(MAKE) -C $(LIBFT_DIR) fclean
+fclean:		 clean
+				@make fclean -C $(LIBFT_DIR)
+				@$(RM) $(NAME)
+				@echo "${YELLOW}> Cleaning of $(NAME) has been done ❌${RESET}${END}"
 
-# Recompilation de tout
-re: fclean all
-# Empêcher make de confondre un fichier et une règle
-.PHONY: all clean fclean re
+re:			 fclean
+				make all
+
+run:		$(NAME)
+		@valgrind --suppressions=ignore.txt ./$(NAME)
+
+#add -s in LIBFT clean fclean re to silence make[1] type msg
+#e.g make -s all
+
+-include $(DEPS)
+
+.PHONY: all clean fclean re run
+
+# **************************************************************************** #
+#                                   COLORS                                     #
+# **************************************************************************** #
+
+BLACK			=	\033[0;30m
+BLUE			=	\033[0;34m
+CYAN			=	\033[0;36m
+GREEN			=	\033[0;32m
+ORANGE			=	\033[0;33m
+PURPLE			=	\033[0;35m
+RED				=	\033[0;31m
+WHITE			=	\033[1;37m
+YELLOW			=	\033[1;33m
+DARK_GRAY		=	\033[1;30m
+LIGHT_GRAY		=	\033[0;37m
+LIGHT_BLUE		=	\033[1;34m
+LIGHT_RED		=	\033[1;31m
+LIGHT_CYAN		=	\033[1;36m
+LIGHT_GREEN		=	\033[1;32m
+LIGHT_PURPLE	=	\033[1;35m
+RESET			= 	\033[0m
